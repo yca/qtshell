@@ -25,3 +25,5 @@ HEADERS += \
 
 target.path = /usr/local/bin
 INSTALLS += target
+
+DEPENDPATH += $$INCLUDEPATH

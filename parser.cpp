@@ -28,10 +28,13 @@ Parser::Parser(QObject *parent)
 	connect(&c, SIGNAL(finished()), SLOT(compileFinished()));
 
 	/* create includes */
-	includes << "#include <QDebug>";
+	if (QFile::exists("/usr/local/bin/.qtshell/includes.txt"))
+		includes = importLines("/usr/local/bin/.qtshell/includes.txt");
+	if (includes.isEmpty())
+		includes << "#include <QDebug>";
 }
 
-int Parser::parse(QString script)
+int Parser::parse(QString script, const QStringList arguments)
 {
 	QStringList scrlines = importLines(script);
 	scrlines.removeFirst(); //#! part
@@ -50,7 +53,16 @@ int Parser::parse(QString script)
 	f.write(includes.join("\n").append('\n').toUtf8());
 
 	f.write("extern \"C\" {\n");
+
+	f.write(QString("static QStringList __arguments__;\n").toUtf8());
+	f.write("void __init()\n");
+	f.write("{\n");
+	foreach (QString arg, arguments)
+		f.write(QString("__arguments__ << \"%1\";\n").arg(arg).toUtf8());
+	f.write("}\n");
+
 	f.write(scrlines.join("\n").toUtf8());
+
 	f.write("}\n");
 
 	int err = c.compile(fname);
@@ -71,17 +83,20 @@ void Parser::compileFinished()
 {
 	QString warn = c.output;
 	if (!warn.isEmpty()) {
-		mDebug() << "*******************************************";
-		mDebug() << warn;
-		mDebug() << "*******************************************";
+		qCritical() << "****************** Warnings *************************";
+		qCritical() << warn;
+		qCritical() << "*******************************************";
 	}
-	if (c.exitcode)
+	if (c.exitcode) {
+		this->deleteLater();
 		return;
+	}
 
 	mDebug() << "compile finished, executing";
 	typedef int(*scrmain)(void);
 	scrmain p = (scrmain)importLib();
 	p();
+	this->deleteLater();
 }
 
 void * Parser::importLib()

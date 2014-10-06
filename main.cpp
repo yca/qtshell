@@ -14,7 +14,7 @@ void myMessageOutput(QtMsgType type, const char *msg)
 		//fprintf(stderr, "Warning: %s\n", msg);
 		break;
 	case QtCriticalMsg:
-		//fprintf(stderr, "Critical: %s\n", msg);
+		fprintf(stderr, "%s\n", msg);
 		break;
 	case QtFatalMsg:
 		//fprintf(stderr, "Fatal: %s\n", msg);
@@ -28,8 +28,9 @@ int main(int argc, char *argv[])
 	qInstallMsgHandler(myMessageOutput);
 	QCoreApplication a(argc, argv);
 
-	Parser p;
-	p.parse(a.arguments()[1]);
+	Parser *p = new Parser;
+	QObject::connect(p, SIGNAL(destroyed()), &a, SLOT(quit()));
+	p->parse(a.arguments()[1], a.arguments());
 
 	return a.exec();
 }
