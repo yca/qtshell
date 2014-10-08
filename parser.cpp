@@ -36,8 +36,17 @@ Parser::Parser(QObject *parent)
 
 int Parser::parse(QString script, const QStringList arguments)
 {
+	currentScript = QFileInfo(script).absoluteFilePath();
 	QStringList scrlines = importLines(script);
 	scrlines.removeFirst(); //#! part
+
+	foreach (QString line, scrlines) {
+		if (line.startsWith("//#include")) {
+			includes << line.replace("//#", "#");
+			//QStringList vals = line.split(" ");
+			//modules << vals[1];
+		}
+	}
 
 	/* rest must be a valid c++ code */
 	QDir d("/tmp");
@@ -96,6 +105,15 @@ void Parser::compileFinished()
 	typedef int(*scrmain)(void);
 	scrmain p = (scrmain)importLib();
 	p();
+
+	/* update history */
+	QFile f("/usr/local/bin/.qtshell/history");
+	if (f.open(QIODevice::WriteOnly | QIODevice::Append)) {
+		f.write(currentScript.toUtf8());
+		f.write("\n");
+		f.close();
+	}
+
 	this->deleteLater();
 }
 

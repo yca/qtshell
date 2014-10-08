@@ -23,6 +23,8 @@ HEADERS += \
     compiler.h \
     parser.h
 
+LIBS += -ldl
+
 target.path = /usr/local/bin
 INSTALLS += target
 

@@ -18,6 +18,7 @@ protected:
 	Compiler c;
 	QString libfile;
 	QStringList includes;
+	QString currentScript;
 
 	void *importLib();
 };
